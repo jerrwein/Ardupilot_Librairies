@@ -1,0 +1,30 @@
+jerry@altabeaglebone11:~/Projs/ardupilot$ git status
+HEAD detached at ArduCopter-stable
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	deleted:    Tools/Linux_HAL_Essentials/pwmpru1
+	deleted:    Tools/Linux_HAL_Essentials/rcinpru0
+	deleted:    Tools/Linux_HAL_Essentials/startup.sh
+	modified:   libraries/AP_HAL/examples/RCInput/RCInput.cpp
+	modified:   libraries/AP_HAL/examples/RCInputToRCOutput/RCInputToRCOutput.cpp
+	modified:   libraries/AP_HAL/examples/RCOutput/RCOutput.cpp
+	modified:   libraries/AP_HAL/examples/RCOutput2/RCOutput.cpp
+	modified:   libraries/AP_HAL_Linux/RCInput.cpp
+	modified:   libraries/AP_HAL_Linux/RCInput.h
+	modified:   libraries/AP_HAL_Linux/RCInput_AioPRU.cpp
+	modified:   libraries/AP_HAL_Linux/RCInput_AioPRU.h
+	modified:   libraries/AP_HAL_Linux/RCInput_PRU.cpp
+	modified:   libraries/AP_HAL_Linux/RCOutput_AioPRU.cpp
+	modified:   libraries/AP_HAL_Linux/RCOutput_AioPRU.h
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	Tools/Linux_HAL_Essentials/pwmpru1_orig
+	Tools/Linux_HAL_Essentials/rcinpwmpru1_orig
+	Tools/Linux_HAL_Essentials/startup.sh_orig
+	libraries/AP_HAL_Linux/RCInput_AioPRU.c.save
+
+

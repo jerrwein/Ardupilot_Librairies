@@ -1,0 +1,850 @@
+diff --git a/Tools/Linux_HAL_Essentials/pwmpru1 b/Tools/Linux_HAL_Essentials/pwmpru1
+deleted file mode 100644
+index da2cbd0e5..000000000
+Binary files a/Tools/Linux_HAL_Essentials/pwmpru1 and /dev/null differ
+diff --git a/Tools/Linux_HAL_Essentials/rcinpru0 b/Tools/Linux_HAL_Essentials/rcinpru0
+deleted file mode 100644
+index cab5c0653..000000000
+Binary files a/Tools/Linux_HAL_Essentials/rcinpru0 and /dev/null differ
+diff --git a/Tools/Linux_HAL_Essentials/startup.sh b/Tools/Linux_HAL_Essentials/startup.sh
+deleted file mode 100755
+index 6b7c0d09f..000000000
+--- a/Tools/Linux_HAL_Essentials/startup.sh
++++ /dev/null
+@@ -1,25 +0,0 @@
+-if [ "`echo $1`" = "load" ]; then
+-    echo "Loading Test_Capes..."
+-    cp devicetree/pxf/BB-SPI0-PXF-01-00A0.dtbo /lib/firmware/
+-    cp devicetree/pxf/BB-SPI1-PXF-01-00A0.dtbo /lib/firmware/
+-    cp devicetree/pxf/BB-BONE-PRU-05-00A0.dtbo /lib/firmware/
+-    cp rcinpru0 /lib/firmware
+-    cp pwmpru1 /lib/firmware
+-    echo BB-BONE-PRU-05 > /sys/devices/bone_capemgr.*/slots
+-    echo BB-SPI0-PXF-01 > /sys/devices/bone_capemgr.*/slots
+-    echo BB-SPI1-PXF-01 > /sys/devices/bone_capemgr.*/slots
+-    echo am33xx_pwm > /sys/devices/bone_capemgr.*/slots
+-    echo bone_pwm_P8_36 > /sys/devices/bone_capemgr.*/slots
+-    dmesg | grep "SPI"
+-    dmesg | grep "PRU"
+-    cat /sys/devices/bone_capemgr.*/slots
+-elif [ "`echo $1`" = "reload" ]; then
+-    echo "Loading Firmware..."
+-    cp rcinpru0 /lib/firmware
+-    cp pwmpru1 /lib/firmware
+-    echo 0:rcinpru0,1:pwmpru1 > /sys/devices/ocp.3/4a300000.prurproc/load
+-else
+-    echo "Usage:"
+-    echo "      ./startup.sh load  : to load the capes and firmware"
+-    echo "      ./startup.sh reload: to reload firmware"
+-fi
+diff --git a/libraries/AP_HAL/examples/RCInput/RCInput.cpp b/libraries/AP_HAL/examples/RCInput/RCInput.cpp
+index 3c2819428..458d4cdef 100644
+--- a/libraries/AP_HAL/examples/RCInput/RCInput.cpp
++++ b/libraries/AP_HAL/examples/RCInput/RCInput.cpp
+@@ -16,7 +16,7 @@ static uint16_t last_value[MAX_CHANNELS];
+ 
+ void setup(void)
+ {
+-    hal.console->printf("Starting RCInput test\n");
++    hal.console->printf("JMW-Starting RCInput test\n");
+ }
+ 
+ void loop(void)
+diff --git a/libraries/AP_HAL/examples/RCInputToRCOutput/RCInputToRCOutput.cpp b/libraries/AP_HAL/examples/RCInputToRCOutput/RCInputToRCOutput.cpp
+index 962ef8dfb..fd30ebedd 100644
+--- a/libraries/AP_HAL/examples/RCInputToRCOutput/RCInputToRCOutput.cpp
++++ b/libraries/AP_HAL/examples/RCInputToRCOutput/RCInputToRCOutput.cpp
+@@ -18,7 +18,7 @@ static uint16_t last_value[MAX_CHANNELS];
+ 
+ void setup(void)
+ {
+-    hal.console->printf("Starting RCInputToRCOutput test\n");
++    hal.console->printf("JMW-Starting RCInputToRCOutput test\n");
+ 
+     for (uint8_t i = 0; i < MAX_CHANNELS; i++) {
+         hal.rcout->enable_ch(i);
+diff --git a/libraries/AP_HAL/examples/RCOutput/RCOutput.cpp b/libraries/AP_HAL/examples/RCOutput/RCOutput.cpp
+index f84dfc8d3..96280955f 100644
+--- a/libraries/AP_HAL/examples/RCOutput/RCOutput.cpp
++++ b/libraries/AP_HAL/examples/RCOutput/RCOutput.cpp
+@@ -11,7 +11,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
+ 
+ void setup (void)
+ {
+-    hal.console->printf("Starting AP_HAL::RCOutput test\n");
++    hal.console->printf("JMW-Starting AP_HAL::RCOutput test\n");
+     for (uint8_t i = 0; i< 14; i++) {
+         hal.rcout->enable_ch(i);
+     }
+diff --git a/libraries/AP_HAL/examples/RCOutput2/RCOutput.cpp b/libraries/AP_HAL/examples/RCOutput2/RCOutput.cpp
+index 588632605..a6078a1e5 100644
+--- a/libraries/AP_HAL/examples/RCOutput2/RCOutput.cpp
++++ b/libraries/AP_HAL/examples/RCOutput2/RCOutput.cpp
+@@ -76,7 +76,7 @@ const struct Menu::command rcoutput_menu_commands[] = {
+ MENU(menu, "Menu: ", rcoutput_menu_commands);
+ 
+ void setup(void) {
+-    hal.console->printf("Starting AP_HAL::RCOutput test\n");
++    hal.console->printf("JMW-Starting AP_HAL::RCOutput test\n");
+ 
+     for (uint8_t i = 0; i < 14; i++) {
+         hal.rcout->enable_ch(i);
+diff --git a/libraries/AP_HAL_Linux/RCInput.cpp b/libraries/AP_HAL_Linux/RCInput.cpp
+index 239b6a909..9b3b2ba19 100644
+--- a/libraries/AP_HAL_Linux/RCInput.cpp
++++ b/libraries/AP_HAL_Linux/RCInput.cpp
+@@ -19,6 +19,15 @@
+ #include "RCInput.h"
+ #include "sbus.h"
+ 
++/* Alta Specific */
++#define START_SBUS_FRAME 0x0f
++#define END_SBUS_FRAME 0x00
++#define MIN_START_DELTA 1000
++
++#define SYSTEM_ID_QSMX_22 0xa2
++#define SYSTEM_ID_QSMX_11 0xb2
++/* Alta Specific */
++
+ #define MIN_NUM_CHANNELS 5
+ 
+ extern const AP_HAL::HAL& hal;
+@@ -27,25 +36,48 @@ using namespace Linux;
+ 
+ RCInput::RCInput()
+ {
+-    ppm_state._channel_counter = -1;
++	ppm_state._channel_counter = -1;
++//	hal.console->printf("Alta3:RCInput::RCInput() entered.");
++
++	// Alta specific
++	_lAltaFramesProcessed = 0;
++	_bAltaFrameSynced = false;
++	_lAltaConseqSyncedFrames = 0;
++	_bAltaGapByteFound = false;
++	_bAltaSysIdByteFound = false;
++	_nAltaFrameBytesIn = 0;
++	_lAltaSyncLosses = 0;
++	// Alta specific
+ }
+ 
+ void RCInput::init()
+ {
++	hal.console->printf("Alta1:RCInput::init() entered.\n");
++	printf("Alta2:RCInput::init() entered.\n");
++	AP_HAL::panic("Alta3:RCInput::init() entered.");
+ }
+ 
+ bool RCInput::new_input()
+ {
+-    bool ret = rc_input_count != last_rc_input_count;
+-    if (ret) {
+-        last_rc_input_count.store(rc_input_count);
+-    }
+-    return ret;
++//	hal.console->printf("Alta:RCInput::new_input() entered.\n");
++
++	bool ret = rc_input_count != last_rc_input_count;
++	if (ret)
++	{
++		last_rc_input_count.store(rc_input_count);
++//		hal.console->printf("Alta:RCInput::new_input() detected.\n");
++
++	}
++	return ret;
+ }
+ 
+ uint8_t RCInput::num_channels()
+ {
+-    return _num_channels;
++	if (_num_channels == 0)
++	{
++		hal.console->printf("Alta:RCInput::num_channels() (nc=%d)entered.\n", _num_channels);
++	}
++	return _num_channels;
+ }
+ 
+ uint16_t RCInput::read(uint8_t ch)
+@@ -58,11 +90,14 @@ uint16_t RCInput::read(uint8_t ch)
+ 
+ uint8_t RCInput::read(uint16_t* periods, uint8_t len)
+ {
+-    uint8_t i;
+-    for (i=0; i<len; i++) {
+-        periods[i] = read(i);
+-    }
+-    return len;
++//	hal.console->printf("Alta: RCInput::read(p,l) entered.\n");
++
++	uint8_t i;
++	for (i=0; i<len; i++)
++	{
++		periods[i] = read(i);
++	}
++	return len;
+ }
+ 
+ /*
+@@ -70,48 +105,57 @@ uint8_t RCInput::read(uint16_t* periods, uint8_t len)
+  */
+ void RCInput::_process_ppmsum_pulse(uint16_t width_usec)
+ {
+-    if (width_usec >= 2700) {
+-        // a long pulse indicates the end of a frame. Reset the
+-        // channel counter so next pulse is channel 0
+-        if (ppm_state._channel_counter >= MIN_NUM_CHANNELS) {
+-            for (uint8_t i=0; i<ppm_state._channel_counter; i++) {
+-                _pwm_values[i] = ppm_state._pulse_capt[i];
+-            }
+-            _num_channels = ppm_state._channel_counter;
+-            rc_input_count++;
+-        }
+-        ppm_state._channel_counter = 0;
+-        return;
+-    }
+-    if (ppm_state._channel_counter == -1) {
+-        // we are not synchronised
+-        return;
+-    }
+-
+-    /*
+-      we limit inputs to between 700usec and 2300usec. This allows us
+-      to decode SBUS on the same pin, as SBUS will have a maximum
+-      pulse width of 100usec
+-     */
+-    if (width_usec > 700 && width_usec < 2300) {
+-        // take a reading for the current channel
+-        // buffer these
+-        ppm_state._pulse_capt[ppm_state._channel_counter] = width_usec;
+-
+-        // move to next channel
+-        ppm_state._channel_counter++;
+-    }
+-
+-    // if we have reached the maximum supported channels then
+-    // mark as unsynchronised, so we wait for a wide pulse
+-    if (ppm_state._channel_counter >= LINUX_RC_INPUT_NUM_CHANNELS) {
+-        for (uint8_t i=0; i<ppm_state._channel_counter; i++) {
+-            _pwm_values[i] = ppm_state._pulse_capt[i];
+-        }
+-        _num_channels = ppm_state._channel_counter;
+-        rc_input_count++;
+-        ppm_state._channel_counter = -1;
+-    }
++	hal.console->printf("Alta: RCInput::process_ppmsum_pulse() entered.\n");
++
++	if (width_usec >= 2700)
++	{
++        	// a long pulse indicates the end of a frame. Reset the
++        	// channel counter so next pulse is channel 0
++        	if (ppm_state._channel_counter >= MIN_NUM_CHANNELS)
++		{
++			for (uint8_t i=0; i<ppm_state._channel_counter; i++) 
++			{
++				_pwm_values[i] = ppm_state._pulse_capt[i];
++			}
++			_num_channels = ppm_state._channel_counter;
++			rc_input_count++;
++		}
++		ppm_state._channel_counter = 0;
++		return;
++	}
++	if (ppm_state._channel_counter == -1)
++	{
++		// we are not synchronised
++		return;
++	}
++
++	/*
++	we limit inputs to between 700usec and 2300usec. This allows us
++	to decode SBUS on the same pin, as SBUS will have a maximum
++	pulse width of 100usec
++	*/
++	if (width_usec > 700 && width_usec < 2300)
++	{
++		// take a reading for the current channel
++		// buffer these
++		ppm_state._pulse_capt[ppm_state._channel_counter] = width_usec;
++
++		// move to next channel
++		ppm_state._channel_counter++;
++	}
++
++	// if we have reached the maximum supported channels then
++	// mark as unsynchronised, so we wait for a wide pulse
++	if (ppm_state._channel_counter >= LINUX_RC_INPUT_NUM_CHANNELS)
++	{
++		for (uint8_t i=0; i<ppm_state._channel_counter; i++)
++		{
++			_pwm_values[i] = ppm_state._pulse_capt[i];
++		}
++		_num_channels = ppm_state._channel_counter;
++		rc_input_count++;
++		ppm_state._channel_counter = -1;
++	}
+ }
+ 
+ /*
+@@ -119,6 +163,8 @@ void RCInput::_process_ppmsum_pulse(uint16_t width_usec)
+  */
+ void RCInput::_process_sbus_pulse(uint16_t width_s0, uint16_t width_s1)
+ {
++	hal.console->printf("Alta: RCInput::process_sbus_pulse() entered.\n");
++
+     // convert to bit widths, allowing for up to 1usec error, assuming 100000 bps
+     uint16_t bits_s0 = (width_s0+1) / 10;
+     uint16_t bits_s1 = (width_s1+1) / 10;
+@@ -200,8 +246,219 @@ reset:
+     memset(&sbus_state, 0, sizeof(sbus_state));
+ }
+ 
++void RCInput::_process_sbus_byte(uint16_t data_delta, uint16_t data_val)
++{
++	hal.console->printf("Alta: RCInput::process_sbus_byte(dd=%04X, dv=%04X) entered.\n", data_delta, data_val);
++
++	// Increment incoming byte counter
++	_nAltaFrameBytesIn++;
++
++	if (_bAltaFrameSynced)
++	{
++		// In the middle of frame acquisition
++		if ((1 <= _nAltaFrameBytesIn) && (_nAltaFrameBytesIn <= 25))
++			sbus_state.bytes[_nAltaFrameBytesIn-1] = data_val;
++		else
++			hal.console->printf("Alta: RCInput::process_sbus_byte() -- FATAL -- frame index (%d) out of range.\n", _nAltaFrameBytesIn);
++
++		/* Are we still in SYNC ? */
++		if ((_nAltaFrameBytesIn == 1) && (data_val != START_SBUS_FRAME))
++		{
++			hal.console->printf("Alta: RCInput::process_sbus_byte() -- ERROR -- start frame sync loss, frame: %u\n", _lAltaFramesProcessed);
++			_bAltaFrameSynced = false;
++			_bAltaStartFound = false;
++			_lAltaSyncLosses++;
++		}
++		else if (_nAltaFrameBytesIn == 25)
++		{
++			if (data_val != END_SBUS_FRAME)
++			{
++				hal.console->printf("Alta: RCInput::process_sbus_byte() -- ERROR -- end frame sync loss, frame: %u\n", _lAltaFramesProcessed);
++				_bAltaFrameSynced = false;
++				_bAltaStartFound = false;
++				_lAltaSyncLosses++;
++			}
++			else
++			{
++				/* We have a 'synced' frame */
++				uint16_t values[LINUX_RC_INPUT_NUM_CHANNELS];
++				uint16_t num_values = 0;
++				bool sbus_failsafe = false;
++				bool sbus_frame_drop = false;
++				uint8_t bytes[25];
++				uint8_t i;
++				for (i=0; i<25; i++)
++					bytes[i] = sbus_state.bytes[i];
++
++//				hal.console->printf("Alta: RCInput::decoding frame()\n");
++				if (sbus_decode (bytes, values, &num_values, &sbus_failsafe, &sbus_frame_drop, LINUX_RC_INPUT_NUM_CHANNELS)
++					&& (num_values >= MIN_NUM_CHANNELS))
++				{
++//					hal.console->printf("Alta: RCInput::decoding frame successful, num_values = %d\n", num_values);
++					for (i=0; i<num_values; i++)
++						_pwm_values[i] = values[i];
++					_num_channels = num_values;
++
++					if (!sbus_failsafe)
++						rc_input_count++;
++				}
++				else
++					hal.console->printf("Alta: RCInput::process_sbus_byte() -- WARNING -- bad frame decode, frame: %u\n", _lAltaFramesProcessed);
++
++				/* Reset for start of next frame */
++				_lAltaFramesProcessed++;
++				_nAltaFrameBytesIn = 0;
++			}
++
++//			if (0 == (_lAltaFramesProcessed % 2500))
++//				hal.console->printf("Alta: RCInput::process_sbus_byte(), Frames processed: %u, Sync losses: %d\n", _lAltaFramesProcessed, _lAltaSyncLosses);
++		}
++	}
++	else    /* Not in SYNC */
++	{
++		/* 'SkipNext' prevents locking into a frame while attempting to sync */
++		if (!_bAltaSkipNextByte)
++		{
++			if (!_bAltaStartFound && (data_val == START_SBUS_FRAME) && (MIN_START_DELTA < data_delta))
++			{
++				hal.console->printf("Alta: RCInput::process_sbus_byte(), acquired SYNC start\n");
++				_bAltaStartFound = true;
++				_nAltaFrameBytesIn = 1;
++			}
++			else if (_bAltaStartFound && (_nAltaFrameBytesIn == 25))
++			{
++				if (data_val == END_SBUS_FRAME)
++				{
++					hal.console->printf("Alta: RCInput::process_sbus_byte(), acquired SYNC END\n");
++					_bAltaFrameSynced = true;
++					_nAltaFrameBytesIn = 0;
++				}
++				else
++				{
++					_bAltaStartFound = false;
++					_bAltaSkipNextByte = true;
++				}
++			}
++		}
++		else
++		{
++			hal.console->printf("Alta: RCInput::process_sbus_byte(), skipping byte\n");
++			_bAltaSkipNextByte = false;
++		}
++	}
++}
++
++void RCInput::_process_qsmx_byte(uint16_t data_delta, uint16_t data_val)
++{
++//	static uint8_t nLastByteVal = 0;
++//	static uint16_t nLastByteDelta = 0;
++
++//	hal.console->printf("Alta: RCInput::process_qsmx_byte(s0=%04X, s1=%04X) entered.\n", data_delta, data_val);
++
++	// Increment incoming byte counter
++	_nAltaFrameBytesIn++;
++
++	if (_bAltaFrameSynced)
++	{
++		// In the middle of frame acquisition
++		if ((1 <= _nAltaFrameBytesIn) && (_nAltaFrameBytesIn <= 16))
++			dsm_state.bytes[_nAltaFrameBytesIn-1] = data_val;
++		else
++			hal.console->printf("Alta: RCInput::process_qsmx_byte() -- FATAL -- frame index (%d) out of range.\n", _nAltaFrameBytesIn);
++
++		/* Are we still in SYNC ? */
++		if ((_nAltaFrameBytesIn == 2) &&
++			(data_val != SYSTEM_ID_QSMX_11) &&
++			(data_val != SYSTEM_ID_QSMX_22))
++		{
++			hal.console->printf("Alta: RCInput::process_qsmx_byte() -- ERROR -- system ID sync loss, frame: %u\n", _lAltaFramesProcessed);
++			_bAltaFrameSynced = false;
++			_bAltaStartFound = false;
++			_bAltaSysIdByteFound = false;
++			_lAltaSyncLosses++;
++		}
++		else if (_nAltaFrameBytesIn == 16)
++		{
++			/* We have a 'synced' frame */
++			uint16_t values[8];
++			uint16_t num_values = 0;
++			bool dsm_failsafe = false;
++//			bool dsm_frame_drop = false;
++			uint8_t bytes[16];
++			uint8_t i;
++			_lAltaConseqSyncedFrames++;
++			for (i=0; i<16; i++)
++				bytes[i] = dsm_state.bytes[i];
++
++//			hal.console->printf("Alta: RCInput::decoding frame()\n");
++			if (dsm_decode(AP_HAL::micros64(), bytes, values, &num_values, 8) && num_values >= MIN_NUM_CHANNELS)
++			{
++//				hal.console->printf("Alta: RCInput::decoding frame successful, num_values = %d\n", num_values);
++				for (i=0; i<num_values; i++)
++					_pwm_values[i] = values[i];
++				_num_channels = num_values;
++
++				if (!dsm_failsafe)
++					rc_input_count++;
++			}
++			else
++				hal.console->printf("Alta: RCInput::process_qsmx_byte() -- WARNING -- bad frame decode, frame: %u\n", _lAltaFramesProcessed);
++
++			/* Reset for start of next frame */
++			_lAltaFramesProcessed++;
++			_nAltaFrameBytesIn = 0;
++//			if (0 == (_lAltaFramesProcessed % 2500))
++//				hal.console->printf("Alta: RCInput::process_sbus_byte(), Frames processed: %u, Sync losses: %d\n", _lAltaFramesProcessed, _lAltaSyncLosses);
++		}
++	}
++	else    /* Not in SYNC */
++	{
++		_lAltaConseqSyncedFrames = 0;
++		/* 'SkipNext' prevents locking into a frame while attempting to sync */
++		if (!_bAltaSkipNextByte)
++		{
++			if (!_bAltaGapByteFound && (MIN_START_DELTA < data_delta))
++                        {
++                                _bAltaGapByteFound = true;
++                                _bAltaSysIdByteFound = false;
++                                hal.console->printf("Alta: RCInput::process_sbus_byte(), acquired gap-byte\n");
++                                _nAltaFrameBytesIn = 1;
++                        }
++                        else if (_bAltaGapByteFound && !_bAltaSysIdByteFound && (_nAltaFrameBytesIn==2))
++                        {
++                                if ((data_val == SYSTEM_ID_QSMX_11) || (data_val == SYSTEM_ID_QSMX_22))
++                                {
++                                        _bAltaSysIdByteFound = true;
++                                        hal.console->printf("Alta: RCInput::process_sbus_byte(), acquired ID-byte\n");
++                                }
++                           	else
++                                {
++                                        _bAltaGapByteFound = false;
++                                        _bAltaSysIdByteFound = false;
++                                        _bAltaFrameSynced = false;
++                                }
++                        }
++                        else if (_bAltaGapByteFound && _bAltaSysIdByteFound && (_nAltaFrameBytesIn == 16))
++                        {
++                                hal.console->printf("Alta: RCInput::process_qsmx_byte(), acquired SYNC END\n");
++                                _bAltaGapByteFound = false;
++                                _bAltaSysIdByteFound = false;
++                                _bAltaFrameSynced = true;
++                                _nAltaFrameBytesIn = 0;
++                        }
++		}
++		else
++		{
++			hal.console->printf("Alta: RCInput::process_qsmx_byte(), skipping byte\n");
++			_bAltaSkipNextByte = false;
++		}
++	}
++}
++
+ void RCInput::_process_dsm_pulse(uint16_t width_s0, uint16_t width_s1)
+ {
++	hal.console->printf("Alta: RCInput::process_dsm_pulse() entered.\n");
++
+     // convert to bit widths, allowing for up to 1usec error, assuming 115200 bps
+     uint16_t bits_s0 = ((width_s0+4)*(uint32_t)115200) / 1000000;
+     uint16_t bits_s1 = ((width_s1+4)*(uint32_t)115200) / 1000000;
+@@ -283,24 +540,28 @@ reset:
+  */
+ void RCInput::_process_rc_pulse(uint16_t width_s0, uint16_t width_s1)
+ {
+-#if 0
++//	hal.console->printf("Alta:_process_rc_pulse() entered.\n");
++#if 1
+     // useful for debugging
+     static FILE *rclog;
+     if (rclog == nullptr) {
+         rclog = fopen("/tmp/rcin.log", "w");
+     }
+     if (rclog) {
+-        fprintf(rclog, "%u %u\n", (unsigned)width_s0, (unsigned)width_s1);
++        fprintf(rclog, "%04X %04X\n", width_s0, width_s1);
+     }
+ #endif
+     // treat as PPM-sum
+-    _process_ppmsum_pulse(width_s0 + width_s1);
++// Alta    _process_ppmsum_pulse(width_s0 + width_s1);
+ 
+     // treat as SBUS
+-    _process_sbus_pulse(width_s0, width_s1);
++// Alta    _process_sbus_pulse(width_s0, width_s1);
+ 
+     // treat as DSM
+-    _process_dsm_pulse(width_s0, width_s1);
++// Alta    _process_dsm_pulse(width_s0, width_s1);
++
++	/* Alta Spektrum QSMX operation */
++	_process_qsmx_byte (width_s0, width_s1);
+ }
+ 
+ /*
+@@ -324,6 +585,8 @@ void RCInput::_update_periods(uint16_t *periods, uint8_t len)
+  */
+ bool RCInput::add_dsm_input(const uint8_t *bytes, size_t nbytes)
+ {
++	hal.console->printf("Alta: RCInput::add_dsm_input() entered.\n");
++
+     if (nbytes == 0) {
+         return false;
+     }
+@@ -393,6 +656,8 @@ bool RCInput::add_dsm_input(const uint8_t *bytes, size_t nbytes)
+  */
+ bool RCInput::add_sumd_input(const uint8_t *bytes, size_t nbytes)
+ {
++	hal.console->printf("Alta: RCInput::add_sumd_input() entered.\n");
++
+     uint16_t values[LINUX_RC_INPUT_NUM_CHANNELS];
+     uint8_t rssi;
+     uint8_t rx_count;
+@@ -424,6 +689,8 @@ bool RCInput::add_sumd_input(const uint8_t *bytes, size_t nbytes)
+  */
+ bool RCInput::add_st24_input(const uint8_t *bytes, size_t nbytes)
+ {
++	hal.console->printf("Alta: RCInput::add_st24_input() entered.\n");
++
+     uint16_t values[LINUX_RC_INPUT_NUM_CHANNELS];
+     uint8_t rssi;
+     uint8_t rx_count;
+@@ -455,6 +722,8 @@ bool RCInput::add_st24_input(const uint8_t *bytes, size_t nbytes)
+  */
+ bool RCInput::add_srxl_input(const uint8_t *bytes, size_t nbytes)
+ {
++	hal.console->printf("Alta: RCInput::add_srxl_input() entered.\n");
++
+     uint16_t values[LINUX_RC_INPUT_NUM_CHANNELS];
+     uint8_t channel_count;
+     uint64_t now = AP_HAL::micros64();
+@@ -486,6 +755,8 @@ bool RCInput::add_srxl_input(const uint8_t *bytes, size_t nbytes)
+  */
+ void RCInput::add_sbus_input(const uint8_t *bytes, size_t nbytes)
+ {
++	hal.console->printf("Alta: RCInput::add_sbus_input() entered.\n");
++
+     if (nbytes == 0) {
+         return;
+     }
+diff --git a/libraries/AP_HAL_Linux/RCInput.h b/libraries/AP_HAL_Linux/RCInput.h
+index e2b9f1187..4e33c08f1 100644
+--- a/libraries/AP_HAL_Linux/RCInput.h
++++ b/libraries/AP_HAL_Linux/RCInput.h
+@@ -25,7 +25,7 @@ public:
+     int16_t get_rssi(void) override {
+         return _rssi;
+     }
+-    
++
+     // default empty _timer_tick, this is overridden by board
+     // specific implementations
+     virtual void _timer_tick() {}
+@@ -59,6 +59,11 @@ protected:
+     void _process_sbus_pulse(uint16_t width_s0, uint16_t width_s1);
+     void _process_dsm_pulse(uint16_t width_s0, uint16_t width_s1);
+ 
++	/* Alta specific */
++	void _process_sbus_byte(uint16_t width_s0, uint16_t width_s1);
++	void _process_qsmx_byte(uint16_t width_s0, uint16_t width_s1);
++	/* Alta specific */
++
+     // state of ppm decoder
+     struct {
+         int8_t _channel_counter;
+@@ -91,6 +96,19 @@ protected:
+         uint32_t last_input_ms;
+     } sbus;
+ 
++	// Alta specific
++	uint16_t 	_nAltaByteIndex;
++	bool 		_bAltaFrameSynced;
++	bool		_bAltaStartFound;
++	bool 		_bAltaSkipNextByte;
++	uint32_t	_lAltaSyncLosses;
++	uint32_t	_lAltaFramesProcessed;
++	uint32_t	_lAltaConseqSyncedFrames;
++	uint16_t 	_nAltaFrameBytesIn;
++	bool 		_bAltaSysIdByteFound;
++	bool 		_bAltaGapByteFound;
++	// Alta specific
++
+     int16_t _rssi = -1;
+ };
+ 
+diff --git a/libraries/AP_HAL_Linux/RCInput_AioPRU.cpp b/libraries/AP_HAL_Linux/RCInput_AioPRU.cpp
+index 8e1fa4775..0b035e9bf 100644
+--- a/libraries/AP_HAL_Linux/RCInput_AioPRU.cpp
++++ b/libraries/AP_HAL_Linux/RCInput_AioPRU.cpp
+@@ -37,13 +37,20 @@ using namespace Linux;
+ 
+ void RCInput_AioPRU::init()
+ {
+-    int mem_fd = open("/dev/mem", O_RDWR|O_SYNC|O_CLOEXEC);
+-    if (mem_fd == -1) {
+-        AP_HAL::panic("Unable to open /dev/mem");
+-    }
+-    ring_buffer = (volatile struct ring_buffer*) mmap(0, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCIN_PRUSS_RAM_BASE);
+-    close(mem_fd);
+-    ring_buffer->ring_head = 0;
++	int mem_fd = open("/dev/mem", O_RDWR|O_SYNC|O_CLOEXEC);
++	if (mem_fd == -1)
++	{
++		AP_HAL::panic("Unable to open /dev/mem");
++	}
++	ring_buffer = (volatile struct ring_buffer*) mmap(0, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCIN_PRUSS_RAM_BASE);
++	close(mem_fd);
++	ring_buffer->ring_head = 0;
++
++	hal.console->printf("Alta-RCInput_AioPRU::init() PRU memory map complete.\n");
++
++	// enable the spektrum RC input power
++	//  ALTA_TBD: ???    hal.gpio->pinMode(BBB_P8_17, HAL_GPIO_OUTPUT);
++	//  ALTA_TBD: ???    hal.gpio->write(BBB_P8_17, 1);
+ }
+ 
+ /*
+@@ -51,16 +58,31 @@ void RCInput_AioPRU::init()
+  */
+ void RCInput_AioPRU::_timer_tick()
+ {
+-    while (ring_buffer->ring_head != ring_buffer->ring_tail) {
+-        if (ring_buffer->ring_tail >= NUM_RING_ENTRIES) {
+-            // invalid ring_tail from PRU - ignore RC input
+-            return;
+-        }
+-        _process_rc_pulse((ring_buffer->buffer[ring_buffer->ring_head].s1_t) / TICK_PER_US,
+-                          (ring_buffer->buffer[ring_buffer->ring_head].s0_t) / TICK_PER_US);
+-        // move to the next ring buffer entry
+-        ring_buffer->ring_head = (ring_buffer->ring_head + 1) % NUM_RING_ENTRIES;
+-    }
++//	hal.console->printf("Alta-RCInput_AioPRU::timer_tick() entered, H=%d, T=%d\n", ring_buffer->ring_head, ring_buffer->ring_tail);
++
++	while (ring_buffer->ring_head != ring_buffer->ring_tail)
++	{
++		if (ring_buffer->ring_tail >= NUM_RING_ENTRIES)
++		{
++			// invalid ring_tail from PRU - ignore RC input
++			hal.console->printf("Alta-RCInput_PRU::timer_tick() Invalid tail.\n");
++			return;
++		}
++
++		/* ALTA: New byte based stuff */
++//		hal.console->printf("tt(), H=%d, T=%d, V:%04X, D:%04X \n", ring_buffer->ring_head, ring_buffer->ring_tail, ring_buffer->buffer[ring_buffer->ring_head].pin_value, ring_buffer->buffer[ring_buffer->ring_head].delta_t);
++
++                _process_rc_pulse(ring_buffer->buffer[ring_buffer->ring_head].pin_value, ring_buffer->buffer[ring_buffer->ring_head].delta_t);
++
++		/* ALTA: Original bit-time based stuff */
++#if 0
++		_process_rc_pulse((ring_buffer->buffer[ring_buffer->ring_head].s1_t) / TICK_PER_US,
++				   (ring_buffer->buffer[ring_buffer->ring_head].s0_t) / TICK_PER_US);
++#endif
++
++		// move to the next ring buffer entry
++		ring_buffer->ring_head = (ring_buffer->ring_head + 1) % NUM_RING_ENTRIES;
++	}
+ }
+ 
+ #endif // CONFIG_HAL_BOARD_SUBTYPE
+diff --git a/libraries/AP_HAL_Linux/RCInput_AioPRU.h b/libraries/AP_HAL_Linux/RCInput_AioPRU.h
+index cb9e9f95c..bda4ee742 100644
+--- a/libraries/AP_HAL_Linux/RCInput_AioPRU.h
++++ b/libraries/AP_HAL_Linux/RCInput_AioPRU.h
+@@ -20,7 +20,8 @@
+ #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_POCKET
+ #define RCIN_PRUSS_RAM_BASE   0x4a301000
+ #else
+-#define RCIN_PRUSS_RAM_BASE   0x4a303000
++//#define RCIN_PRUSS_RAM_BASE   0x4a303000
++#define RCIN_PRUSS_RAM_BASE   0x4a312000
+ #endif
+ 
+ // we use 300 ring buffer entries to guarantee that a full 25 byte
+@@ -41,8 +42,10 @@ protected:
+         volatile uint16_t ring_head; // owned by ARM CPU
+         volatile uint16_t ring_tail; // owned by the PRU
+         struct {
+-               volatile uint32_t s1_t; // 5ns per tick
+-               volatile uint32_t s0_t; // 5ns per tick
++		volatile uint16_t pin_value;
++           	volatile uint16_t delta_t;
++//               volatile uint32_t s1_t; // 5ns per tick
++//               volatile uint32_t s0_t; // 5ns per tick
+         } buffer[NUM_RING_ENTRIES];
+     };
+     volatile struct ring_buffer *ring_buffer;
+diff --git a/libraries/AP_HAL_Linux/RCInput_PRU.cpp b/libraries/AP_HAL_Linux/RCInput_PRU.cpp
+index ab124c5e3..f341b9f4c 100644
+--- a/libraries/AP_HAL_Linux/RCInput_PRU.cpp
++++ b/libraries/AP_HAL_Linux/RCInput_PRU.cpp
+@@ -60,7 +60,7 @@ void RCInput_PRU::_timer_tick()
+             _process_rc_pulse(_s0_time, ring_buffer->buffer[ring_buffer->ring_head].delta_t);
+         }
+         // move to the next ring buffer entry
+-        ring_buffer->ring_head = (ring_buffer->ring_head + 1) % NUM_RING_ENTRIES;        
++        ring_buffer->ring_head = (ring_buffer->ring_head + 1) % NUM_RING_ENTRIES;
+     }
+ }
+ 
+diff --git a/libraries/AP_HAL_Linux/RCOutput_AioPRU.cpp b/libraries/AP_HAL_Linux/RCOutput_AioPRU.cpp
+index c141f40d6..827bd6129 100644
+--- a/libraries/AP_HAL_Linux/RCOutput_AioPRU.cpp
++++ b/libraries/AP_HAL_Linux/RCOutput_AioPRU.cpp
+@@ -28,6 +28,8 @@
+ #include "../../Tools/Linux_HAL_Essentials/pru/aiopru/RcAioPRU_BBBMINI_bin.h"
+ #endif
+ 
++extern const AP_HAL::HAL& hal;
++
+ using namespace Linux;
+ 
+ static void catch_sigbus(int sig)
+@@ -45,11 +47,14 @@ void RCOutput_AioPRU::init()
+    mem_fd = open("/dev/mem", O_RDWR|O_SYNC|O_CLOEXEC);
+ 
+    pwm = (struct pwm*) mmap(0, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCOUT_PRUSS_RAM_BASE);
+-   iram = (uint32_t*)mmap(0, 0x2000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCOUT_PRUSS_IRAM_BASE);
+-   ctrl = (uint32_t*)mmap(0, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCOUT_PRUSS_CTRL_BASE);
++// Alta   iram = (uint32_t*)mmap(0, 0x2000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCOUT_PRUSS_IRAM_BASE);
++// Alta   ctrl = (uint32_t*)mmap(0, 0x1000, PROT_READ|PROT_WRITE, MAP_SHARED, mem_fd, RCOUT_PRUSS_CTRL_BASE);
+ 
+    close(mem_fd);
+ 
++/*Alta Specific */
++	hal.console->printf("Alta-RCOutput_AioPRU::init() skipping PRU F/W load...\n");
++#if 0
+    // Reset PRU
+    *ctrl = 0;
+ 
+@@ -58,6 +63,8 @@ void RCOutput_AioPRU::init()
+ 
+    // Start PRU
+    *ctrl |= 2;
++#endif
++/*Alta Specific */
+ 
+    // all outputs default to 50Hz, the top level vehicle code
+    // overrides this when necessary
+@@ -66,14 +73,18 @@ void RCOutput_AioPRU::init()
+ 
+ void RCOutput_AioPRU::set_freq(uint32_t chmask, uint16_t freq_hz)
+ {
+-   uint8_t i;
+-   uint32_t tick = TICK_PER_S / freq_hz;
+-
+-   for(i = 0; i < PWM_CHAN_COUNT; i++) {
+-      if(chmask & (1U << i)) {
+-         pwm->channel[i].time_t = tick;
+-      }
+-   }
++	uint8_t i;
++	uint32_t tick = TICK_PER_S / freq_hz;
++
++	hal.console->printf("Alta-RCOutput_AioPRU::set_freq() CH: %d, Hz: %d\n", chmask, freq_hz);
++
++	for(i = 0; i < PWM_CHAN_COUNT; i++)
++	{
++		if(chmask & (1U << i))
++		{
++			pwm->channel[i].time_t = tick;
++		}
++	}
+ }
+ 
+ uint16_t RCOutput_AioPRU::get_freq(uint8_t ch)
+@@ -89,9 +100,12 @@ uint16_t RCOutput_AioPRU::get_freq(uint8_t ch)
+ 
+ void RCOutput_AioPRU::enable_ch(uint8_t ch)
+ {
+-   if(ch < PWM_CHAN_COUNT) {
+-      pwm->channelenable |= 1U << ch;
+-   }
++	hal.console->printf("Alta-RCOutput_AioPRU::enable_ch(). CH: %dd\n", ch);
++
++	if(ch < PWM_CHAN_COUNT)
++	{
++		pwm->channelenable |= 1U << ch;
++	}
+ }
+ 
+ void RCOutput_AioPRU::disable_ch(uint8_t ch)
+diff --git a/libraries/AP_HAL_Linux/RCOutput_AioPRU.h b/libraries/AP_HAL_Linux/RCOutput_AioPRU.h
+index 2845f4972..fe71f8e01 100644
+--- a/libraries/AP_HAL_Linux/RCOutput_AioPRU.h
++++ b/libraries/AP_HAL_Linux/RCOutput_AioPRU.h
+@@ -16,7 +16,8 @@
+ #define RCOUT_PRUSS_CTRL_BASE 0x4a322000
+ #define RCOUT_PRUSS_IRAM_BASE 0x4a334000
+ #else
+-#define RCOUT_PRUSS_RAM_BASE 0x4a302000
++// Alta - #define RCOUT_PRUSS_RAM_BASE 0x4a302000
++#define RCOUT_PRUSS_RAM_BASE 0x4a310000
+ #define RCOUT_PRUSS_CTRL_BASE 0x4a324000
+ #define RCOUT_PRUSS_IRAM_BASE 0x4a338000
+ #endif
